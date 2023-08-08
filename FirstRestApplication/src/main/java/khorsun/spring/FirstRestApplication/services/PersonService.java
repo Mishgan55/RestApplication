@@ -2,6 +2,7 @@ package khorsun.spring.FirstRestApplication.services;
 
 import khorsun.spring.FirstRestApplication.Repositories.PersonRepository;
 import khorsun.spring.FirstRestApplication.models.Person;
+import khorsun.spring.FirstRestApplication.utils.PersonNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,8 +22,8 @@ public class PersonService {
         return personRepository.findAll();
     }
 
-    public Optional<Person> findOne(int id){
+    public Person findOne(int id){
 
-        return personRepository.findById(id);
+        return personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
     }
 }
