@@ -3,20 +3,25 @@ package khorsun.spring.FirstRestApplication.controller;
 import khorsun.spring.FirstRestApplication.models.Person;
 import khorsun.spring.FirstRestApplication.services.PersonService;
 import khorsun.spring.FirstRestApplication.utils.PersonErrorResponse;
+import khorsun.spring.FirstRestApplication.utils.PersonNotCreatedException;
 import khorsun.spring.FirstRestApplication.utils.PersonNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+
 
 @RestController
 @RequestMapping("/people")
@@ -37,12 +42,44 @@ public class PeopleController {
     public Person findPersonById(@PathVariable("id") int id){
         return personService.findOne(id);
     }
-
     @ExceptionHandler
-    private ResponseEntity<PersonErrorResponse> hanselException(PersonNotFoundException e){
+    private ResponseEntity<PersonErrorResponse> handelException(PersonNotFoundException e){
 
         PersonErrorResponse response = new PersonErrorResponse("This person doesn't exist", new Date());
 
         return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
     }
+
+    @PostMapping()
+    public ResponseEntity<HttpStatus> savePerson(@RequestBody @Valid Person person,
+                                                 BindingResult bindingResult){
+
+        if (bindingResult.hasErrors()){
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
+
+            for (FieldError fieldError : fieldErrors) {
+                stringBuilder.append(fieldError.getField()).append(" - ").append(fieldError.getDefaultMessage())
+                        .append(";");
+            }
+            throw new PersonNotCreatedException(stringBuilder.toString());
+        }
+
+        personService.save(person);
+
+        return ResponseEntity.ok(HttpStatus.OK);
+
+    }
+    @ExceptionHandler
+    private ResponseEntity<PersonErrorResponse> handelException(PersonNotCreatedException e){
+
+        PersonErrorResponse response = new PersonErrorResponse(e.getMessage(), new Date());
+
+        return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+    }
+
+
+
 }

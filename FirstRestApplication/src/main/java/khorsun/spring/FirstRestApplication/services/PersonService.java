@@ -5,11 +5,13 @@ import khorsun.spring.FirstRestApplication.models.Person;
 import khorsun.spring.FirstRestApplication.utils.PersonNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
+@Transactional(readOnly = true)
 public class PersonService {
 
     private final PersonRepository personRepository;
@@ -25,5 +27,9 @@ public class PersonService {
     public Person findOne(int id){
 
         return personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
+    }
+    @Transactional
+    public void save(Person person){
+        personRepository.save(person);
     }
 }
