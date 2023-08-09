@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -30,6 +31,13 @@ public class PersonService {
     }
     @Transactional
     public void save(Person person){
+        enrichPerson(person);
         personRepository.save(person);
+    }
+
+    private void enrichPerson(Person person){
+        person.setCreatedAt(LocalDateTime.now());
+        person.setUpdatedAt(LocalDateTime.now());
+        person.setUpdatedWho("ADMIN");
     }
 }

@@ -1,10 +1,12 @@
 package khorsun.spring.FirstRestApplication.controller;
 
+import khorsun.spring.FirstRestApplication.DTO.PersonDTO;
 import khorsun.spring.FirstRestApplication.models.Person;
 import khorsun.spring.FirstRestApplication.services.PersonService;
 import khorsun.spring.FirstRestApplication.utils.PersonErrorResponse;
 import khorsun.spring.FirstRestApplication.utils.PersonNotCreatedException;
 import khorsun.spring.FirstRestApplication.utils.PersonNotFoundException;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -28,19 +31,21 @@ import java.util.List;
 public class PeopleController {
 
     private final PersonService personService;
+    private final ModelMapper modelMapper;
     @Autowired
-    public PeopleController(PersonService personService) {
+    public PeopleController(PersonService personService, ModelMapper modelMapper) {
         this.personService = personService;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping()
-    public List<Person> findPeople(){
-        return personService.findAll();
+    public List<PersonDTO> findPeople(){
+        return personService.findAll().stream().map(this::convertToPersonDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Person findPersonById(@PathVariable("id") int id){
-        return personService.findOne(id);
+    public PersonDTO findPersonById(@PathVariable("id") int id){
+        return convertToPersonDTO(personService.findOne(id));
     }
     @ExceptionHandler
     private ResponseEntity<PersonErrorResponse> handelException(PersonNotFoundException e){
@@ -51,7 +56,7 @@ public class PeopleController {
     }
 
     @PostMapping()
-    public ResponseEntity<HttpStatus> savePerson(@RequestBody @Valid Person person,
+    public ResponseEntity<HttpStatus> savePerson(@RequestBody @Valid PersonDTO personDTO,
                                                  BindingResult bindingResult){
 
         if (bindingResult.hasErrors()){
@@ -67,11 +72,19 @@ public class PeopleController {
             throw new PersonNotCreatedException(stringBuilder.toString());
         }
 
-        personService.save(person);
+        personService.save(convertToPerson(personDTO));
 
         return ResponseEntity.ok(HttpStatus.OK);
 
     }
+
+    private Person convertToPerson(PersonDTO personDTO) {
+        return modelMapper.map(personDTO,Person.class);
+    }
+    private PersonDTO convertToPersonDTO(Person person) {
+        return modelMapper.map(person, PersonDTO.class);
+    }
+
     @ExceptionHandler
     private ResponseEntity<PersonErrorResponse> handelException(PersonNotCreatedException e){
 
